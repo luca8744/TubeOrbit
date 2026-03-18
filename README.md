@@ -138,6 +138,8 @@ Default daily quota: **10,000 units**. Results are cached per session to minimis
 
 The credential files `GoogleService-Info.plist` and `google-services.json` are listed in `.gitignore` and are **never committed** to version control.
 
+> ℹ️ **Public Git Repository Notice**
+> If you are compiling this project from a cloned public repository, the authentication will fail by default since those files are missing. You must create your own Google Cloud Project, enable the YouTube Data API v3, create your own OAuth 2.0 Client IDs, and download your personal configuration files as explained in the [Google Cloud Setup](#2-google-cloud-setup) section.
 ---
 
 ## Out of Scope (v1)
