@@ -18,15 +18,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
-  bool _isShorts = false;
+  FeedTabType _tabType = FeedTabType.videos;
+  ContentLanguage _language = ContentLanguage.all;
+  VideoSortOption _sortOption = VideoSortOption.viewCount;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        setState(() => _isShorts = _tabController.index == 1);
+        setState(() => _tabType = FeedTabType.values[_tabController.index]);
       }
     });
     _scrollController.addListener(_onScroll);
@@ -45,7 +47,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
       ref
           .read(feedProvider((
             category: widget.category,
-            isShorts: _isShorts,
+            tabType: _tabType,
+            language: _language,
+            sortOption: _sortOption,
           )).notifier)
           .loadMore();
     }
@@ -53,36 +57,104 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   @override
   Widget build(BuildContext context) {
-    final feedKey = (category: widget.category, isShorts: _isShorts);
-    final feedAsync = ref.watch(feedProvider(feedKey));
 
     return Scaffold(
       body: NestedScrollView(
         controller: _scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            expandedHeight: 120,
             floating: true,
             snap: true,
-            pinned: false,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.only(left: 16, bottom: 52),
-              title: Hero(
-                tag: 'category_${widget.category.name}',
-                child: Material(
-                  color: Colors.transparent,
-                  child: Text(
-                    widget.category.displayName,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 22,
+            pinned: true,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                PopupMenuButton<ContentLanguage>(
+                  initialValue: _language,
+                  onSelected: (val) {
+                    setState(() => _language = val);
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: AppTheme.surfaceVariant,
+                  itemBuilder: (context) => ContentLanguage.values.map((lang) {
+                    return PopupMenuItem(
+                      value: lang,
+                      child: Text(
+                        lang.displayName,
+                        style: TextStyle(
+                          color: _language == lang ? AppTheme.accent : AppTheme.textPrimary,
+                          fontWeight: _language == lang ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  child: Chip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_language.displayName),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, size: 16, color: AppTheme.textSecondary),
+                      ],
+                    ),
+                    backgroundColor: AppTheme.surfaceVariant,
+                    side: const BorderSide(color: Colors.transparent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    labelStyle: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
                     ),
                   ),
                 ),
-              ),
-              background: Container(color: AppTheme.surface),
+                const SizedBox(width: 8),
+                PopupMenuButton<VideoSortOption>(
+                  initialValue: _sortOption,
+                  onSelected: (val) {
+                    setState(() => _sortOption = val);
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: AppTheme.surfaceVariant,
+                  itemBuilder: (context) => VideoSortOption.values.map((opt) {
+                    return PopupMenuItem(
+                      value: opt,
+                      child: Text(
+                        opt.displayName,
+                        style: TextStyle(
+                          color: _sortOption == opt ? AppTheme.accent : AppTheme.textPrimary,
+                          fontWeight: _sortOption == opt ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  child: Chip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_sortOption.displayName),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, size: 16, color: AppTheme.textSecondary),
+                      ],
+                    ),
+                    backgroundColor: AppTheme.surfaceVariant,
+                    side: const BorderSide(color: Colors.transparent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    labelStyle: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48),
@@ -93,6 +165,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                   tabs: const [
                     Tab(text: 'Video'),
                     Tab(text: 'Shorts'),
+                    Tab(text: 'Esterni'),
                   ],
                 ),
               ),
@@ -102,8 +175,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildFeed(feedAsync, isShorts: false),
-            _buildFeed(feedAsync, isShorts: true),
+            _buildFeed(
+              ref.watch(feedProvider((category: widget.category, tabType: FeedTabType.videos, language: _language, sortOption: _sortOption))),
+              tabType: FeedTabType.videos,
+            ),
+            _buildFeed(
+              ref.watch(feedProvider((category: widget.category, tabType: FeedTabType.shorts, language: _language, sortOption: _sortOption))),
+              tabType: FeedTabType.shorts,
+            ),
+            _buildFeed(
+              ref.watch(feedProvider((category: widget.category, tabType: FeedTabType.external, language: _language, sortOption: _sortOption))),
+              tabType: FeedTabType.external,
+            ),
           ],
         ),
       ),
@@ -112,7 +195,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   Widget _buildFeed(
     AsyncValue<FeedState> feedAsync, {
-    required bool isShorts,
+    required FeedTabType tabType,
   }) {
     return feedAsync.when(
       loading: () => _buildShimmer(),
@@ -149,6 +232,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             return VideoCard(
               video: state.videos[i],
               category: widget.category,
+              openExternal: tabType == FeedTabType.external,
             );
           },
         );

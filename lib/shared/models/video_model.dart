@@ -2,7 +2,9 @@ class VideoModel {
   final String videoId;
   final String title;
   final String channelTitle;
+  final String channelId;
   final String thumbnailUrl;
+  final DateTime publishedAt;
   final String? duration; // ISO 8601 duration string
   final bool isShort;
 
@@ -10,7 +12,9 @@ class VideoModel {
     required this.videoId,
     required this.title,
     required this.channelTitle,
+    required this.channelId,
     required this.thumbnailUrl,
+    required this.publishedAt,
     this.duration,
     this.isShort = false,
   });
@@ -27,7 +31,9 @@ class VideoModel {
       videoId: (json['id'] as Map<String, dynamic>)['videoId'] as String,
       title: snippet['title'] as String,
       channelTitle: snippet['channelTitle'] as String,
+      channelId: snippet['channelId'] as String,
       thumbnailUrl: thumbUrl['url'] as String,
+      publishedAt: DateTime.parse(snippet['publishedAt'] as String),
     );
   }
 }

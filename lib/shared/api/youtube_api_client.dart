@@ -30,6 +30,11 @@ class YouTubeApiClient {
     required String duration,
     String? pageToken,
     int maxResults = 20,
+    String? order,
+    String? publishedAfter,
+    String? relevanceLanguage,
+    String? regionCode,
+    String videoEmbeddable = 'any',
   }) async {
     final response = await _dio.get(
       '/search',
@@ -37,9 +42,14 @@ class YouTubeApiClient {
         'part': 'snippet',
         'q': query,
         'type': 'video',
+        'videoEmbeddable': videoEmbeddable,
         'videoDuration': duration,
         'maxResults': maxResults,
         'pageToken': pageToken,
+        'order': order,
+        'publishedAfter': publishedAfter,
+        'relevanceLanguage': relevanceLanguage,
+        'regionCode': regionCode,
       }..removeWhere((_, v) => v == null),
     );
 
@@ -56,6 +66,87 @@ class YouTubeApiClient {
       videos: videos,
       nextPageToken: response.data['nextPageToken'] as String?,
     );
+  }
+
+  /// Fetch the country origin of a list of channels. Returns a map of channelId -> countryCode.
+  Future<Map<String, String?>> getChannelCountries(List<String> channelIds) async {
+    if (channelIds.isEmpty) return {};
+
+    final Map<String, String?> result = {};
+    // Break into chunks of 50 to respect API limits
+    for (var i = 0; i < channelIds.length; i += 50) {
+      final chunk = channelIds.sublist(
+        i,
+        i + 50 > channelIds.length ? channelIds.length : i + 50,
+      );
+
+      final response = await _dio.get(
+        '/channels',
+        queryParameters: {
+          'part': 'snippet',
+          'id': chunk.join(','),
+        },
+      );
+
+      final items = (response.data['items'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+      for (final item in items) {
+        final id = item['id'] as String;
+        final snippet = item['snippet'] as Map<String, dynamic>?;
+        result[id] = snippet?['country'] as String?;
+      }
+    }
+    return result;
+  }
+
+  /// Returns a list of video IDs that are explicitly marked as `embeddable == false`
+  /// or are blocked due to licensing/syndication.
+  Future<List<String>> getNonEmbeddableVideos(List<String> videoIds) async {
+    if (videoIds.isEmpty) return [];
+
+    final List<String> blockedIds = [];
+    // Break into chunks of 50 to respect API limits
+    for (var i = 0; i < videoIds.length; i += 50) {
+      final chunk = videoIds.sublist(
+        i,
+        i + 50 > videoIds.length ? videoIds.length : i + 50,
+      );
+
+      final response = await _dio.get(
+        '/videos',
+        queryParameters: {
+          'part': 'status,contentDetails',
+          'id': chunk.join(','),
+        },
+      );
+
+      final items = (response.data['items'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+      for (final item in items) {
+        final id = item['id'] as String;
+        final status = item['status'] as Map<String, dynamic>?;
+        final contentDetails = item['contentDetails'] as Map<String, dynamic>?;
+
+        bool isBlocked = false;
+        if (status != null && status['embeddable'] == false) {
+          isBlocked = true;
+        }
+
+        if (contentDetails != null) {
+          if (contentDetails['licensedContent'] == true) {
+            isBlocked = true;
+          }
+          
+          final regionRestriction = contentDetails['regionRestriction'] as Map<String, dynamic>?;
+          if (regionRestriction != null && regionRestriction.containsKey('blocked')) {
+            isBlocked = true;
+          }
+        }
+
+        if (isBlocked) {
+          blockedIds.add(id);
+        }
+      }
+    }
+    return blockedIds;
   }
 
   /// Fetch all playlists for the authenticated user.

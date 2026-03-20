@@ -3,6 +3,13 @@ import 'package:tubeorbit/core/constants.dart';
 import 'package:tubeorbit/features/auth/auth_provider.dart';
 import 'package:tubeorbit/shared/api/youtube_api_client.dart';
 import 'package:tubeorbit/shared/models/video_model.dart';
+import 'package:tubeorbit/shared/services/video_filter_gateway.dart';
+
+enum FeedTabType {
+  videos,
+  shorts,
+  external,
+}
 
 // ─── YouTube API client provider ───────────────────────────────────────────────
 final youTubeClientProvider = FutureProvider<YouTubeApiClient?>((ref) async {
@@ -38,37 +45,55 @@ class FeedState {
       );
 }
 
-// ─── Feed provider (per category + isShorts) ──────────────────────────────────
+// ─── Feed provider (per category + tabType + language) ──────────────────────────────────
 final feedProvider = AsyncNotifierProvider.family<FeedNotifier, FeedState,
-    ({TubeCategory category, bool isShorts})>(
+    ({TubeCategory category, FeedTabType tabType, ContentLanguage language, VideoSortOption sortOption})>(
   FeedNotifier.new,
 );
 
 class FeedNotifier
-    extends FamilyAsyncNotifier<FeedState, ({TubeCategory category, bool isShorts})> {
+    extends FamilyAsyncNotifier<FeedState, ({TubeCategory category, FeedTabType tabType, ContentLanguage language, VideoSortOption sortOption})> {
   @override
   Future<FeedState> build(
-      ({TubeCategory category, bool isShorts}) arg) async {
+      ({TubeCategory category, FeedTabType tabType, ContentLanguage language, VideoSortOption sortOption}) arg) async {
     final client = await ref.watch(youTubeClientProvider.future);
     if (client == null) return const FeedState();
-    return _fetch(client, arg.category, arg.isShorts, pageToken: null);
+    return _fetch(client, arg.category, arg.tabType, arg.language, arg.sortOption, pageToken: null);
   }
 
   Future<FeedState> _fetch(
     YouTubeApiClient client,
     TubeCategory category,
-    bool isShorts, {
+    FeedTabType tabType,
+    ContentLanguage language,
+    VideoSortOption sortOption, {
     String? pageToken,
     List<VideoModel> existing = const [],
   }) async {
-    final duration = isShorts ? 'short' : 'medium';
+    final duration = tabType == FeedTabType.shorts ? 'short' : 'medium';
+    final embeddable = tabType == FeedTabType.external ? 'any' : 'true';
+    final publishedAfter =
+        DateTime.now().subtract(const Duration(days: 60)).toUtc().toIso8601String();
+        
+    final query = language.getSearchKeyword(category);
+
     final result = await client.searchVideos(
-      query: category.searchKeyword,
+      query: query,
       duration: duration,
       pageToken: pageToken,
+      order: sortOption.apiValue,
+      publishedAfter: publishedAfter,
+      relevanceLanguage: language.relevanceLanguage,
+      regionCode: language.regionCode,
+      videoEmbeddable: embeddable,
     );
+
+    final filterGateway = ref.read(videoFilterGatewayProvider);
+    final requireEmbeddable = tabType != FeedTabType.external;
+    final filteredVideos = await filterGateway.filterVideos(result.videos, language, client, requireEmbeddable: requireEmbeddable);
+
     return FeedState(
-      videos: [...existing, ...result.videos],
+      videos: [...existing, ...filteredVideos],
       nextPageToken: result.nextPageToken,
     );
   }
@@ -86,7 +111,9 @@ class FeedNotifier
     final next = await _fetch(
       client,
       arg.category,
-      arg.isShorts,
+      arg.tabType,
+      arg.language,
+      arg.sortOption,
       pageToken: current.nextPageToken,
       existing: current.videos,
     );

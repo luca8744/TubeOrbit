@@ -4,6 +4,7 @@ import 'package:tubeorbit/features/auth/auth_provider.dart';
 import 'package:tubeorbit/features/auth/sign_in_screen.dart';
 import 'package:tubeorbit/features/category/category_screen.dart';
 import 'package:tubeorbit/features/feed/feed_screen.dart';
+import 'package:tubeorbit/features/feed/video_player_screen.dart';
 import 'package:tubeorbit/core/constants.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -39,6 +40,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             orElse: () => TubeCategory.tecnologia,
           );
           return FeedScreen(category: category);
+        },
+      ),
+      GoRoute(
+        path: '/player/:id',
+        builder: (context, state) {
+          final videoId = state.pathParameters['id']!;
+          return VideoPlayerScreen(videoId: videoId);
         },
       ),
     ],

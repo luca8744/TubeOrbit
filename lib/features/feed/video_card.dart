@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tubeorbit/core/constants.dart';
 import 'package:tubeorbit/core/theme.dart';
 import 'package:tubeorbit/features/playlist/playlist_provider.dart';
@@ -11,11 +12,13 @@ import 'package:url_launcher/url_launcher.dart';
 class VideoCard extends ConsumerWidget {
   final VideoModel video;
   final TubeCategory category;
+  final bool openExternal;
 
   const VideoCard({
     super.key,
     required this.video,
     required this.category,
+    this.openExternal = false,
   });
 
   @override
@@ -122,7 +125,7 @@ class VideoCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          video.channelTitle,
+                          '${video.channelTitle} • ${video.publishedAt.day.toString().padLeft(2, '0')}/${video.publishedAt.month.toString().padLeft(2, '0')}/${video.publishedAt.year}',
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 12,
@@ -159,9 +162,13 @@ class VideoCard extends ConsumerWidget {
   }
 
   Future<void> _openVideo(BuildContext context) async {
-    final uri = Uri.parse(video.youtubeUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (openExternal) {
+      final uri = Uri.parse(video.youtubeUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } else {
+      context.push('/player/${video.videoId}');
     }
   }
 }

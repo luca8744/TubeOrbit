@@ -36,7 +36,7 @@ dependencies:
   go_router: ^14.2.7
 
   # Video Player
-  youtube_player_iframe: ^5.1.1
+  youtube_player_iframe: ^5.2.2
 
   # Storage
   flutter_secure_storage: ^9.2.2

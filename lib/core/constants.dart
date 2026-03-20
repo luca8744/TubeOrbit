@@ -26,11 +26,19 @@ enum TubeCategory {
       };
 
   String get searchKeyword => switch (this) {
-        TubeCategory.geopolitica => 'geopolitics',
-        TubeCategory.scienze => 'science',
-        TubeCategory.ai => 'artificial intelligence',
-        TubeCategory.stem => 'stem education',
-        TubeCategory.tecnologia => 'technology',
+        TubeCategory.geopolitica => 'geopolitica|geopolitics',
+        TubeCategory.scienze => 'scienza|science',
+        TubeCategory.ai => 'intelligenza artificiale|"artificial intelligence"',
+        TubeCategory.stem => 'stem education|divulgazione scientifica',
+        TubeCategory.tecnologia => 'tecnologia|technology',
+      };
+
+  String get italianSearchKeyword => switch (this) {
+        TubeCategory.geopolitica => 'geopolitica',
+        TubeCategory.scienze => 'scienza',
+        TubeCategory.ai => 'intelligenza artificiale',
+        TubeCategory.stem => 'divulgazione scientifica',
+        TubeCategory.tecnologia => 'tecnologia',
       };
 
   String get playlistName => '$kPlaylistPrefix$name';
@@ -65,4 +73,62 @@ enum TubeCategory {
             const Color(0xFF2C2C2C),
           ],
       };
+}
+
+// ─── Content Languages ─────────────────────────────────────────────────────────
+enum ContentLanguage {
+  all,
+  us,
+  ita,
+  eu;
+
+  String get displayName => switch (this) {
+        ContentLanguage.all => '🌍 ALL',
+        ContentLanguage.us => '🇺🇸 US',
+        ContentLanguage.ita => '🇮🇹 ITA',
+        ContentLanguage.eu => '🇪🇺 EU',
+      };
+
+  String? get regionCode => switch (this) {
+        ContentLanguage.all => null,
+        ContentLanguage.us => 'US',
+        ContentLanguage.ita => 'IT',
+        ContentLanguage.eu => 'GB',
+      };
+
+  String? get relevanceLanguage => switch (this) {
+        ContentLanguage.all => null,
+        ContentLanguage.us => 'en',
+        ContentLanguage.ita => 'it',
+        ContentLanguage.eu => null,
+      };
+
+  List<String>? get allowedCountries => switch (this) {
+        ContentLanguage.all => null,
+        ContentLanguage.us => const ['US', 'GB', 'CA', 'AU', 'NZ', 'IE'],
+        ContentLanguage.ita => const ['IT', 'SM', 'VA', 'CH'],
+        ContentLanguage.eu => const [
+            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 
+            'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 
+            'SI', 'ES', 'SE', 'GB', 'CH', 'NO'
+          ],
+      };
+
+  String getSearchKeyword(TubeCategory category) => switch (this) {
+        ContentLanguage.ita => category.italianSearchKeyword,
+        _ => category.searchKeyword,
+      };
+}
+
+// ─── Sorting Options ───────────────────────────────────────────────────────────
+enum VideoSortOption {
+  viewCount,
+  date;
+
+  String get displayName => switch (this) {
+        VideoSortOption.viewCount => '🔥 Più visti',
+        VideoSortOption.date => '⏱️ Più recenti',
+      };
+
+  String get apiValue => name;
 }

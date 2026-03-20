@@ -161,7 +161,7 @@ class _CategoryCardState extends State<_CategoryCard>
       onTapUp: (_) async {
         await _controller.reverse();
         if (context.mounted) {
-          context.go('/feed/${category.name}');
+          context.push('/feed/${category.name}');
         }
       },
       onTapCancel: () => _controller.reverse(),

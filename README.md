@@ -6,14 +6,22 @@ A Flutter mobile application (iOS & Android) that wraps YouTube content by curat
 
 ## Features
 
-- **Category Selection** — choose from 5 curated topics: Geopolitics, Science, AI, STEM, Technology
-- **Video & Shorts Tabs** — switch between regular videos and Shorts, all filtered by the active category
-- **Google Sign-In** — authenticate with your YouTube account via OAuth 2.0
-- **Smart Playlists** — playlists named `tubeorbit_<category>` are auto-created on your YouTube account on first save
-- **User-initiated Saves** — tap the bookmark icon → confirm in a bottom sheet → video is added to the playlist. Nothing is saved without explicit user confirmation
-- **Remove from Playlist** — tap a filled bookmark to remove the video
-- **Infinite Scroll** — paginated loading via YouTube Data API v3 `nextPageToken`
-- **Dark AMOLED Theme** — violet accent, Inter typography, Hero transitions between screens
+- **Category Selection** — choose from 5 curated topics: Geopolitics, Science, AI, STEM, Technology with bilingual queries (Italian/English).
+- **Language & Region Selector** — dynamically restrict searches to ALL, US, ITA, or EU.
+- **Strict Origin Filtering** — to guarantee genuine regional results, the app batch-fetches the creator's channel and filters strictly by country.
+- **Advanced Error 152 Bypass** — bypasses YouTube generic syndication blocks on mobile by spoofing the domain origin as `youtube.com` and natively filtering out `licensedContent` and `regionRestriction` videos via the real-time `/videos` API.
+- **Smart Filtering & Sorting** — videos are filtered by past 60 days relevance. Choose to sort your feed by either views (🔥) or publication date (⏱️). Video cards immediately display the upload date.
+- **Minimalist UI** — features a decluttered AppBar with centered popup menus for quick region and sorting adjustments.
+- **AI-Ready Gateway** — built-in `VideoFilterGateway` interceptor ready to plug-in ML/LLM models for evaluating semantic similarity before displaying videos in the feed.
+- **In-App Native Player** — watch YouTube videos directly inside the App with full-screen support (no redirects to external apps), powered by `youtube_player_iframe` and equipped with a fallback redirect button.
+- **Navigation State** — proper stacked routing via `GoRouter` context pushing, maintaining natural back-navigation.
+- **Video, Shorts, and Esterni Tabs** — switch between regular Embeddable videos, Shorts, and the "Esterni" tab (which bypasses the embeddable rule and opens content directly in the YouTube app).
+- **Google Sign-In** — authenticate with your YouTube account via OAuth 2.0.
+- **Smart Playlists** — playlists named `tubeorbit_<category>` are auto-created on your YouTube account on first save.
+- **User-initiated Saves** — tap the bookmark icon → confirm in a bottom sheet → video is added to the playlist.
+- **Remove from Playlist** — tap a filled bookmark to remove the video.
+- **Infinite Scroll** — paginated loading via YouTube Data API v3 `nextPageToken`.
+- **Dark AMOLED Theme** — violet accent, Inter typography, Hero transitions between screens.
 
 ---
 
@@ -27,7 +35,7 @@ A Flutter mobile application (iOS & Android) that wraps YouTube content by curat
 | HTTP | Dio |
 | Auth | `google_sign_in` + `googleapis_auth` |
 | YouTube API | YouTube Data API v3 via `googleapis` |
-| Video Open | `url_launcher` → external YouTube app |
+| Video Open | `youtube_player_iframe` (Native In-App Player) |
 | Image Cache | `cached_network_image` |
 | Fonts | Google Fonts – Inter |
 
@@ -68,11 +76,11 @@ lib/
 
 | Name | Search Query | Playlist |
 |------|-------------|---------|
-| Geopolitica | geopolitics | `tubeorbit_geopolitica` |
-| Scienze | science | `tubeorbit_scienze` |
-| AI | artificial intelligence | `tubeorbit_ai` |
-| STEM | stem education | `tubeorbit_stem` |
-| Tecnologia | technology | `tubeorbit_tecnologia` |
+| Geopolitica | `geopolitica\|geopolitics` | `tubeorbit_geopolitica` |
+| Scienze | `scienza\|science` | `tubeorbit_scienze` |
+| AI | `intelligenza artificiale\|"artificial intelligence"` | `tubeorbit_ai` |
+| STEM | `stem education\|divulgazione scientifica` | `tubeorbit_stem` |
+| Tecnologia | `tecnologia\|technology` | `tubeorbit_tecnologia` |
 
 ---
 
